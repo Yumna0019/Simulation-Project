@@ -11,6 +11,7 @@ export default function Simulation() {
         <button className='model-button' onClick={() => navigate('/mmSimulate')}>M/M/S</button>
         <button className='model-button' onClick={() => navigate('/MG')}>M/G/S</button>
         <button className='model-button' onClick={() => navigate('/GG')}>G/G/S</button>
+        <button className='model-button' onClick={() => navigate('/GM')}>G/M/S</button>
     </div>
 </div>
   )

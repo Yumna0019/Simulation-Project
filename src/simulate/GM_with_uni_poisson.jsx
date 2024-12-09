@@ -1,11 +1,8 @@
 import React, { useState } from "react";
-import Graph from "./Graph";
-
+import Graph from './Graph'
 function MultiServerSimulation() {
   const [min, setMin] = useState(2.58);
   const [max, setMax] = useState(2.58);
-  const [mu, setMu] = useState(2.58);
-  const [sd, setSd] = useState(2.58);
   const [num, setNum] = useState(5);
   const [serverCount, setServerCount] = useState(2);
   const [a, setA] = useState(1);
@@ -16,33 +13,10 @@ function MultiServerSimulation() {
   const [Z, setZ1] = useState(10112166);
   const [results, setResults] = useState(null);
 
-  // Error function approximation
-  const erf = (z) => {
-    const t = 1 / (1 + 0.5 * Math.abs(z));
-    const tau =
-      t *
-      Math.exp(
-        -z * z -
-          1.26551223 +
-          1.00002368 * t +
-          0.37409196 * t * t +
-          0.09678418 * t * t * t -
-          0.18628806 * t * t * t * t +
-          0.27886807 * t * t * t * t * t -
-          1.13520398 * t * t * t * t * t * t +
-          1.48851587 * t * t * t * t * t * t * t -
-          0.82215223 * t * t * t * t * t * t * t * t +
-          0.17087277 * t * t * t * t * t * t * t * t * t
-      );
-    return z >= 0 ? 1 - tau : tau - 1;
-  };
-
-  // CDF calculation using the error function
-  const normal_cumulative = (k) => {
+  const UniCumulative = (a, b, k) => {
     let cumulativeProb = 0;
     for (let x = 0; x <= k; x++) {
-      const prob = 0.5 * (1 + erf((x - mu) / (sd * Math.sqrt(2))));
-
+      const prob = (x - a) / (b - a);
       cumulativeProb += prob;
     }
     return cumulativeProb;
@@ -66,7 +40,7 @@ function MultiServerSimulation() {
       let service;
       do {
         const randomNumber = Math.random();
-        service = Math.round(a + (b - a) * randomNumber); // Uniform distribution
+        service = Math.round(randomNumber);
       } while (service < 1);
       return service;
     });
@@ -75,7 +49,7 @@ function MultiServerSimulation() {
     let previousCp = 0;
     const cpArray = [];
     for (let i = 0; i < num; i++) {
-      const cp = normal_cumulative(i);
+      const cp = UniCumulative(a, b, i);
       ranges.push({ lower: previousCp, upper: cp, minVal: i });
       cpArray.push(cp);
       previousCp = cp;
@@ -110,7 +84,7 @@ function MultiServerSimulation() {
     const patientDetails = [];
     let previousCpForIA = 0;
     for (let i = 0; i < num; i++) {
-      const cpVal = normal_cumulative(i);
+      const cpVal = UniCumulative(a, b, i);
       const minVal = i;
       const iaRange = `${previousCpForIA.toFixed(6)} - ${cpVal.toFixed(6)}`;
       const iaFinal = iaFinalArray[i];
@@ -278,18 +252,6 @@ function MultiServerSimulation() {
           type="number"
           value={max}
           onChange={(e) => setMax(parseFloat(e.target.value))}
-        />
-        <label>Mu : </label>
-        <input
-          type="number"
-          value={mu}
-          onChange={(e) => setMu(parseFloat(e.target.value))}
-        />
-        <label>Standard Deviation : </label>
-        <input
-          type="number"
-          value={sd}
-          onChange={(e) => setSd(parseFloat(e.target.value))}
         />
         <label>Number of Patients: </label>
         <input

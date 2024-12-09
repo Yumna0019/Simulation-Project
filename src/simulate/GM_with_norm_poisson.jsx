@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import Graph from "./Graph";
+import Graph from './Graph';
 
 function MultiServerSimulation() {
-  const [min, setMin] = useState(2.58);
-  const [max, setMax] = useState(2.58);
   const [mu, setMu] = useState(2.58);
   const [sd, setSd] = useState(2.58);
   const [num, setNum] = useState(5);
@@ -66,7 +64,7 @@ function MultiServerSimulation() {
       let service;
       do {
         const randomNumber = Math.random();
-        service = Math.round(a + (b - a) * randomNumber); // Uniform distribution
+        service = Math.round(randomNumber);
       } while (service < 1);
       return service;
     });
@@ -267,18 +265,6 @@ function MultiServerSimulation() {
     <div>
       <h1>Multi-Server Simulation</h1>
       <div>
-        <label>Min value (a): </label>
-        <input
-          type="number"
-          value={min}
-          onChange={(e) => setMin(parseFloat(e.target.value))}
-        />
-        <label>Max value (b) : </label>
-        <input
-          type="number"
-          value={max}
-          onChange={(e) => setMax(parseFloat(e.target.value))}
-        />
         <label>Mu : </label>
         <input
           type="number"

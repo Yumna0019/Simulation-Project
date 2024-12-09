@@ -457,6 +457,61 @@ function MultiServerSimulation() {
               </tr>
             </tbody>
           </table>
+          {/* Graphs */}
+          <h3>Graphs</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+            {/* Interarrival Times */}
+            <Graph
+              title="Interarrival Times"
+              labels={results.patientDetails.map((_, i) => `Patient ${i + 1}`)}
+              data={results.patientDetails.map((detail) => detail.iaFinal)}
+              type="bar"
+            />
+
+            {/* Arrival Times */}
+            <Graph
+              title="Arrival Times"
+              labels={results.patientDetails.map((_, i) => `Patient ${i + 1}`)}
+              data={results.arrivalTimes}
+              type="bar"
+            />
+
+            {/* Waiting Times */}
+            <Graph
+              title="Waiting Times"
+              labels={results.patientDetails.map((_, i) => `Patient ${i + 1}`)}
+              data={results.Waiting_Time}
+              type="bar"
+            />
+
+            {/* Turnaround Times */}
+            <Graph
+              title="Turnaround Times"
+              labels={results.patientDetails.map((_, i) => `Patient ${i + 1}`)}
+              data={results.Turnaround_Time}
+              type="bar"
+            />
+
+            {/* Response Times */}
+            <Graph
+              title="Response Times"
+              labels={results.patientDetails.map((_, i) => `Patient ${i + 1}`)}
+              data={results.Response_Time}
+              type="bar"
+            />
+
+            {/* Server Utilization */}
+            <Graph
+              title="Server Utilization"
+              labels={results.metrics.serverUtilization.map(
+                (util) => `Server ${util.server}`
+              )}
+              data={results.metrics.serverUtilization.map(
+                (util) => util.utilization
+              )}
+              type="bar"
+            />
+          </div>
         </div>
       )}
     </div>

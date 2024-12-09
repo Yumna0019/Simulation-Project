@@ -34,6 +34,17 @@ import GG_with_uni_uni from './simulate/GG_with_uni_uni'
 import GG_with_uni_norm from './simulate/GG_with_uni_norm'
 import GG_with_norm_uni from './simulate/GG_with_norm_uni'
 import GG_with_norm_norm from './simulate/GG_with_norm_norm'
+import GM from './simulate/GM'
+import GMS_with from './simulate/GMS_with'
+import GMS_without from './simulate/GMS_without'
+import GM_with_norm_exp from './simulate/GM_with_norm_exp'
+import GM_with_norm_poisson from './simulate/GM_with_norm_poisson'
+import GM_with_uni_exp from './simulate/GM_with_uni_exp'
+import GM_with_uni_poisson from './simulate/GM_with_uni_poisson'
+import GM_without_uni_exp from './simulate/GM_without_uni_exp'
+import GM_without_uni_poisson from './simulate/GM_without_uni_poisson'
+import GM_without_norm_exp from './simulate/GM_without_norm_exp'
+import GM_without_norm_poisson from './simulate/GM_without_norm_poisson'
 function App() {
   return (
     <Router>
@@ -72,6 +83,17 @@ function App() {
         <Route path="/GG_with_uni_norm" element={<GG_with_uni_norm/>} />
         <Route path="/GG_with_norm_uni" element={<GG_with_norm_uni/>} />
         <Route path="/GG_with_norm_norm" element={<GG_with_norm_norm/>} />
+        <Route path="/GM" element={<GM/>} />
+        <Route path="/GMS_with" element={<GMS_with/>} />
+        <Route path="/GMS_without" element={<GMS_without/>} />
+        <Route path="/GM_with_norm_exp" element={<GM_with_norm_exp/>} />
+        <Route path="/GM_with_norm_poisson" element={<GM_with_norm_poisson/>} />
+        <Route path="/GM_with_uni_exp" element={<GM_with_uni_exp/>} />
+        <Route path="/GM_with_uni_poisson" element={<GM_with_uni_poisson/>} />
+        <Route path="/GM_without_uni_exp" element={<GM_without_uni_exp/>} />
+        <Route path="/GM_without_uni_poisson" element={<GM_without_uni_poisson/>} />
+        <Route path="/GM_without_norm_exp" element={<GM_without_norm_exp/>} />
+        <Route path="/GM_without_norm_poisson" element={<GM_without_norm_poisson/>} />
       </Routes>
     </Router>
   );
