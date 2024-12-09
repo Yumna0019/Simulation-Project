@@ -1,3 +1,6 @@
+*{
+    margin: 10px;
+}
 /* Global Styles */
 body {
     font-family: 'Arial', sans-serif; /* Clean font */
