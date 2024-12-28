@@ -42,7 +42,19 @@ function MultiServerSimulation() {
   };
 
   const runSimulation = () => {
-    const serviceTimes = Array.from({ length: num }, () => {
+    const ranges = [];
+    let previousCp = 0;
+    const cpArray = [];
+    for (let i = 0; i < num; i++) {
+      const cp = normal_cumulative(i);
+      if (cp >= 1) {
+        break;
+      }
+      ranges.push({ lower: previousCp, upper: cp, minVal: i });
+      cpArray.push(cp);
+      previousCp = cp;
+    }
+    const serviceTimes = Array.from({ length: cpArray.length }, () => {
       let service;
       do {
         const randomNumber = Math.random();
@@ -51,18 +63,10 @@ function MultiServerSimulation() {
       return service;
     });
 
-    const ranges = [];
-    let previousCp = 0;
-    const cpArray = [];
-    for (let i = 0; i < num; i++) {
-      const cp = normal_cumulative(i);
-      ranges.push({ lower: previousCp, upper: cp, minVal: i });
-      cpArray.push(cp);
-      previousCp = cp;
-    }
+   
 
     const interArrival = [0];
-    for (let i = 1; i < num; i++) {
+    for (let i = 1; i < cpArray.length; i++) {
       let ia;
       do {
         ia = Math.random();
@@ -74,7 +78,7 @@ function MultiServerSimulation() {
     const arrivalTimes = [];
     const iaFinalArray = [];
 
-    interArrival.forEach((ia, i) => {
+    interArrival.slice(0, cpArray.length ).forEach((ia, i) => {
       let iaFinal = -1;
       ranges.forEach((range) => {
         if (range.lower <= ia && ia <= range.upper) {
@@ -86,10 +90,10 @@ function MultiServerSimulation() {
       arrivalTimes.push(arrival);
       iaFinalArray.push(iaFinal);
     });
-
+    arrivalTimes.slice(0, cpArray.length - 1);
     const patientDetails = [];
     let previousCpForIA = 0;
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < cpArray.length; i++) {
       const cpVal = normal_cumulative(i);
       const minVal = i;
       const iaRange = `${previousCpForIA.toFixed(6)} - ${cpVal.toFixed(6)}`;
@@ -108,11 +112,11 @@ function MultiServerSimulation() {
       previousCpForIA = cpVal;
     }
 
-    const Start_Time = Array(num).fill(0);
-    const Finish_Time = Array(num).fill(0);
-    const Turnaround_Time = Array(num).fill(0);
-    const Waiting_Time = Array(num).fill(0);
-    const Response_Time = Array(num).fill(0);
+    const Start_Time = Array(cpArray.length).fill(0);
+    const Finish_Time = Array(cpArray.length).fill(0);
+    const Turnaround_Time = Array(cpArray.length).fill(0);
+    const Waiting_Time = Array(cpArray.length).fill(0);
+    const Response_Time = Array(cpArray.length).fill(0);
 
     const serverAvailability = Array(server).fill(0);
     const serverTasks = Array(server)
@@ -120,7 +124,7 @@ function MultiServerSimulation() {
       .map(() => []);
     const serverBusyTime = Array(server).fill(0);
 
-    const processOrder = [...Array(num).keys()].sort(
+    const processOrder = [...Array(cpArray.length).keys()].sort(
       (a, b) => arrivalTimes[a] - arrivalTimes[b]
     );
 
@@ -163,10 +167,10 @@ function MultiServerSimulation() {
     );
 
     const metrics = {
-      avgWT: Waiting_Time.reduce((a, b) => a + b) / num,
-      avgRT: Response_Time.reduce((a, b) => a + b) / num,
-      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / num,
-      avgST: serviceTimes.reduce((a, b) => a + b) / num,
+      avgWT: Waiting_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgRT: Response_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgST: serviceTimes.reduce((a, b) => a + b) / cpArray.length,
       overallUtilization: serverUtilization.reduce((a, b) => a + b, 0),
     };
 

@@ -45,6 +45,15 @@ import GM_without_uni_exp from './simulate/GM_without_uni_exp'
 import GM_without_uni_poisson from './simulate/GM_without_uni_poisson'
 import GM_without_norm_exp from './simulate/GM_without_norm_exp'
 import GM_without_norm_poisson from './simulate/GM_without_norm_poisson'
+import MMS_with_poisson_exp from './simulate/MMS_with_poisson_exp'
+import MMS_with_poisson_poisson from './simulate/MMS_with_poisson_poisson'
+import MMS_with_exp_exp from './simulate/MMS_with_exp_exp'
+import MMS_with_exp_poisson from './simulate/MMS_with_exp_poisson'
+import MMS_without_poisson_exp from './simulate/MMS_without_poisson_exp'
+import MMS_without_poisson_poisson from './simulate/MMS_without_poisson_poisson'
+import MMS_without_exp_exp from './simulate/MMS_without_exp_exp'
+import MMS_without_exp_poisson from './simulate/MMS_without_exp_poisson'
+
 function App() {
   return (
     <Router>
@@ -94,6 +103,15 @@ function App() {
         <Route path="/GM_without_uni_poisson" element={<GM_without_uni_poisson/>} />
         <Route path="/GM_without_norm_exp" element={<GM_without_norm_exp/>} />
         <Route path="/GM_without_norm_poisson" element={<GM_without_norm_poisson/>} />
+        <Route path="/MMS_with_poisson_exp" element={<MMS_with_poisson_exp/>} />
+        <Route path="/MMS_with_poisson_poisson" element={<MMS_with_poisson_poisson/>} />
+        <Route path="/MMS_with_exp_exp" element={<MMS_with_exp_exp/>} />
+        <Route path="/MMS_with_exp_poisson" element={<MMS_with_exp_poisson/>} />
+        <Route path="/MMS_without_poisson_exp" element={<MMS_without_poisson_exp/>} />
+        <Route path="/MMS_without_poisson_poisson" element={<MMS_without_poisson_poisson/>} />
+        <Route path="/MMS_without_exp_exp" element={<MMS_without_exp_exp/>} />
+        <Route path="/MMS_without_exp_poisson" element={<MMS_without_exp_poisson/>} />
+
       </Routes>
     </Router>
   );

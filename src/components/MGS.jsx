@@ -1,21 +1,31 @@
 import React, { useState } from "react";
 
 const MGS = () => {
-  const [interArrivalTime, setInterArrivalTime] = useState("");
+  const [arrivalDistribution, setArrivalDistribution] = useState("poisson");
+  const [interArrivalTime, setInterArrivalTime] = useState("0.3");
   const [serviceDistribution, setServiceDistribution] = useState("normal");
-  const [meanServiceTime, setMeanServiceTime] = useState("");
-  const [stdDevServiceTime, setStdDevServiceTime] = useState("");
+  const [meanServiceTime, setMeanServiceTime] = useState("0.25");
+  const [stdDevServiceTime, setStdDevServiceTime] = useState("0.25");
   const [minServiceTime, setMinServiceTime] = useState("");
   const [maxServiceTime, setMaxServiceTime] = useState("");
   const [shapeParam, setShapeParam] = useState("");
   const [scaleParam, setScaleParam] = useState("");
-  const [numServers, setNumServers] = useState("");
+  const [numServers, setNumServers] = useState("2");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
   const calculateMetrics = () => {
-    const lambdaRate = 1 / interArrivalTime;
-    let mu, sigmaS2;
+    let lambdaRate, mu, sigmaS2;
+
+    switch (arrivalDistribution) {
+      case "exponential":
+        lambdaRate = 1 / parseFloat(interArrivalTime);
+        break;
+
+      case "poisson":
+        lambdaRate = 1 / parseFloat(interArrivalTime);
+        break;
+    }
 
     if (serviceDistribution === "normal") {
       mu = 1 / meanServiceTime;
@@ -26,6 +36,18 @@ const MGS = () => {
     } else if (serviceDistribution === "gamma") {
       mu = 1 / (shapeParam * scaleParam);
       sigmaS2 = shapeParam * scaleParam ** 2;
+    }
+    else if (serviceDistribution === "exponential") {
+      const meanExpoServiceTime = 1 / meanServiceTime
+      mu = 1 / meanExpoServiceTime;
+      sigmaS2 = 1 / Math.pow(meanServiceTime, 2);
+    }
+
+    else if (serviceDistribution === "poisson") {
+      const meanPoissonServiceTime = meanServiceTime
+      mu = 1 / meanPoissonServiceTime;
+      sigmaS2 = meanServiceTime;
+
     } else {
       setError("Unsupported distribution type.");
       return;
@@ -41,13 +63,28 @@ const MGS = () => {
       return;
     }
 
-    // Calculate performance metrics
-    const L =
-      lambdaRate * mu + (lambdaRate ** 2 * sigmaS2) / (2 * s * (1 - rho));
-    const W = L / lambdaRate;
-    const Lq = L - lambdaRate / mu;
-    const Wq = Lq / lambdaRate;
-    const idleTime = 1 - rho;
+    // Helper function to calculate factorial
+    const factorial = (n) => {
+      return n <= 1 ? 1 : n * factorial(n - 1);
+    };
+
+    // Corrected calculation for P0
+    let P0_inv = 0;
+    for (let k = 0; k < numServers; k++) {
+      P0_inv += (numServers * rho) ** k / factorial(k);
+    }
+    P0_inv +=
+      (numServers * rho) ** numServers / (factorial(numServers) * (1 - rho));
+    const P0 = 1 / P0_inv;
+
+    console.log(P0);
+
+    // Calculating metrics
+    const Lq = P0 * (((lambdaRate / mu) ** numServers * rho) / (factorial(numServers) * (1 - rho) ** 2));
+    const Wq = Lq / lambdaRate; // Average wait in queue
+    const W = Wq + 1 / mu; // Average time spent in the system
+    const L = lambdaRate * W; // Average number of customers in the system
+    const idleTime = 1 - rho; // Proportion of time server is idle
 
     // Set results
     setResult({
@@ -65,14 +102,48 @@ const MGS = () => {
     <div>
       <h2>M/G/s Queue Model</h2>
       <div>
-        <label>
-          Inter-arrival time:
-          <input
-            type="number"
-            value={interArrivalTime}
-            onChange={(e) => setInterArrivalTime(e.target.value)}
-          />
-        </label>
+        <div>
+          <label>
+            Inter-arrival Time:
+            <select
+              value={arrivalDistribution}
+              onChange={(e) => setArrivalDistribution(e.target.value)}
+            >
+              <option value="poisson">Poisson</option>
+              <option value="exponential">Exponential</option>
+
+            </select>
+
+          </label>
+        </div>
+
+        {arrivalDistribution === "exponential" && (
+          <>
+            <label>
+              Inter Arrival Time:
+              <input
+                type="number"
+                value={interArrivalTime}
+                onChange={(e) => setInterArrivalTime(e.target.value)}
+              />
+            </label>
+
+          </>
+        )}
+        {arrivalDistribution === "poisson" && (
+          <>
+            <label>
+              Inter Arrival Time:
+              <input
+                type="number"
+                value={interArrivalTime}
+                onChange={(e) => setInterArrivalTime(e.target.value)}
+              />
+            </label>
+
+          </>
+        )}
+
         <label>
           Service Time Distribution:
           <select
@@ -82,8 +153,37 @@ const MGS = () => {
             <option value="normal">Normal</option>
             <option value="uniform">Uniform</option>
             <option value="gamma">Gamma</option>
+            <option value="exponential">Exponential</option>
+            <option value="poisson">Poisson</option>
           </select>
+
         </label>
+        {serviceDistribution === "exponential" && (
+          <>
+            <label>
+              Mean Service Time:
+              <input
+                type="number"
+                value={meanServiceTime}
+                onChange={(e) => setMeanServiceTime(e.target.value)}
+              />
+            </label>
+
+          </>
+        )}
+        {serviceDistribution === "poisson" && (
+          <>
+            <label>
+              Mean Service Time:
+              <input
+                type="number"
+                value={meanServiceTime}
+                onChange={(e) => setMeanServiceTime(e.target.value)}
+              />
+            </label>
+
+          </>
+        )}
         {serviceDistribution === "normal" && (
           <>
             <label>
@@ -162,11 +262,11 @@ const MGS = () => {
             <h3>Performance Metrics</h3>
             <p>
               Average number of customers in the system (Ls):{" "}
-              {result.Ls.toFixed(3)}
+              {result.L.toFixed(3)}
             </p>
             <p>
               Average time a customer spends in the system (Ws):{" "}
-              {result.Ws.toFixed(3)} minutes
+              {result.W.toFixed(3)} minutes
             </p>
             <p>
               Average number of customers in the queue (Lq):
@@ -176,8 +276,8 @@ const MGS = () => {
               Average time a customer spends waiting in the queue (Wq):{" "}
               {result.Wq.toFixed(3)} minutes
             </p>
-            <p>Time the server was idle:{result.idle.toFixed(3)}</p>
-            <p>Time the server was busy: {result.p.toFixed(2)}</p>
+            <p>Time the server was idle:{result.idleTime.toFixed(3)}</p>
+            <p>Time the server was busy: {result.utilization.toFixed(2)}</p>
             {/* <p>Coefficient of variation of service time (Cs²): {result.Cs2.toFixed(3)}</p>
                 <p>Coefficient of variation of arrival process (Ca²): {result.Ca2.toFixed(3)}</p> */}
           </div>

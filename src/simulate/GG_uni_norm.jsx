@@ -2,27 +2,45 @@ import React, { useState } from "react";
 import Graph from "./Graph";
 
 function MultiServerSimulation() {
-  const [a, seta] = useState(2.96);
-  const [b, setb] = useState(2.96);
-  const [mu, setMu] = useState(2.58);
-  const [sd, setSd] = useState(2.58);
+  const [a, seta] = useState();
+  const [b, setb] = useState();
+  const [mu, setMu] = useState();
+  const [sd, setSd] = useState();
   const [num, setNum] = useState(5);
   const [server, setServer] = useState(2);
   const [results, setResults] = useState(null);
 
   const UniCumulative = (a, b, k) => {
     let cumulativeProb = 0;
-    for (let x = 0; x <= k; x++) {
-      const prob = (x - a) / (b - a);
-      cumulativeProb += prob;
+    let prob = (k - a) / (b - a);
+    if (k < a) {
+      prob = 0;
     }
+    else if (k > b) {
+      prob = 1;
+    }
+    cumulativeProb += prob;
+    console.log(cumulativeProb)
     return cumulativeProb;
   };
 
   const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1));
 
   const runSimulation = () => {
-    const serviceTimes = Array.from({ length: num }, () => {
+
+    const ranges = [];
+    let previousCp = 0;
+    const cpArray = [];
+    for (let i = 0; i < num; i++) {
+      const cp = UniCumulative(a, b, i);
+      if (cp > 1) {
+        break;
+      }
+      ranges.push({ lower: previousCp, upper: cp, minVal: i });
+      cpArray.push(cp);
+      previousCp = cp;
+    }
+    const serviceTimes = Array.from({ length: cpArray.length }, () => {
       let service;
       do {
         const r1 = Math.random();
@@ -32,18 +50,8 @@ function MultiServerSimulation() {
       return service;
     });
 
-    const ranges = [];
-    let previousCp = 0;
-    const cpArray = [];
-    for (let i = 0; i < num; i++) {
-      const cp = UniCumulative(a, b, i);
-      ranges.push({ lower: previousCp, upper: cp, minVal: i });
-      cpArray.push(cp);
-      previousCp = cp;
-    }
-
-    const interArrival = [0];
-    for (let i = 1; i < num; i++) {
+    const interArrival = [];
+    for (let i = 1; i < cpArray.length; i++) {
       let ia;
       do {
         ia = Math.random();
@@ -55,7 +63,7 @@ function MultiServerSimulation() {
     const arrivalTimes = [0];
     const iaFinalArray = [0];
 
-    interArrival.forEach((ia) => {
+    interArrival.slice(0, cpArray.length - 1).forEach((ia) => {
       let iaFinal = -1;
       ranges.forEach((range) => {
         if (range.lower <= ia && ia <= range.upper) {
@@ -65,16 +73,17 @@ function MultiServerSimulation() {
 
       arrival += iaFinal;
       arrivalTimes.push(arrival);
-      iaFinalArray.push(iaFinal); // Ensure iaFinal is properly set here
+      iaFinalArray.push(iaFinal);
     });
+    arrivalTimes.slice(0, cpArray.length - 1);
 
     const patientDetails = [];
     let previousCpForIA = 0;
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < cpArray.length; i++) {
       const cpVal = UniCumulative(a, b, i);
       const minVal = i;
       const iaRange = `${previousCpForIA.toFixed(6)} - ${cpVal.toFixed(6)}`;
-      const iaFinal = iaFinalArray[i]; // Correctly using iaFinal from iaFinalArray
+      const iaFinal = iaFinalArray[i];
 
       patientDetails.push({
         patientNo: i + 1,
@@ -89,17 +98,17 @@ function MultiServerSimulation() {
       previousCpForIA = cpVal;
     }
 
-    const Start_Time = Array(num).fill(0);
-    const Finish_Time = Array(num).fill(0);
-    const Turnaround_Time = Array(num).fill(0);
-    const Waiting_Time = Array(num).fill(0);
-    const Response_Time = Array(num).fill(0);
+    const Start_Time = Array(cpArray.length).fill(0);
+    const Finish_Time = Array(cpArray.length).fill(0);
+    const Turnaround_Time = Array(cpArray.length).fill(0);
+    const Waiting_Time = Array(cpArray.length).fill(0);
+    const Response_Time = Array(cpArray.length).fill(0);
 
     const serverAvailability = Array(server).fill(0);
     const serverTasks = Array(server).fill(0).map(() => []);
     const serverBusyTime = Array(server).fill(0);
 
-    const processOrder = [...Array(num).keys()].sort(
+    const processOrder = [...Array(cpArray.length).keys()].sort(
       (a, b) => arrivalTimes[a] - arrivalTimes[b]
     );
 
@@ -142,10 +151,10 @@ function MultiServerSimulation() {
     );
 
     const metrics = {
-      avgWT: Waiting_Time.reduce((a, b) => a + b) / num,
-      avgRT: Response_Time.reduce((a, b) => a + b) / num,
-      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / num,
-      avgST: serviceTimes.reduce((a, b) => a + b) / num,
+      avgWT: Waiting_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgRT: Response_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgST: serviceTimes.reduce((a, b) => a + b) / cpArray.length,
       overallUtilization: serverUtilization.reduce((a, b) => a + b, 0),
     };
 
@@ -292,8 +301,8 @@ function MultiServerSimulation() {
             </tbody>
           </table>
 
-          
-           <h2>Simulation Metrics</h2>
+
+          <h2>Simulation Metrics</h2>
           <table border="1">
             <thead>
               <tr>
@@ -327,67 +336,67 @@ function MultiServerSimulation() {
         </div>
       )}
       <div>
-  {results && (
-    <div>
-      <h2>Graphs</h2>
+        {results && (
+          <div>
+            <h2>Graphs</h2>
 
-      {/* Interarrival Times Graph */}
-      <Graph
-        title="Interarrival Times"
-        labels={results.patientDetails.serviceTimes.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.patientDetails.iaFinal}
-      />
+            {/* Interarrival Times Graph */}
+            <Graph
+              title="Interarrival Times"
+              labels={results.patientDetails.serviceTimes.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.patientDetails.iaFinal}
+            />
 
-      {/* Arrival Times Graph */}
-      <Graph
-        title="Arrival Times"
-        labels={results.patientDetails.serviceTimes.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.patientDetails.arrivalTimes}
-      />
+            {/* Arrival Times Graph */}
+            <Graph
+              title="Arrival Times"
+              labels={results.patientDetails.serviceTimes.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.patientDetails.arrivalTimes}
+            />
 
-      {/* Waiting Times Graph */}
-      <Graph
-        title="Waiting Times"
-        labels={results.patientDetails.serviceTimes.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.patientDetails.Waiting_Time}
-      />
+            {/* Waiting Times Graph */}
+            <Graph
+              title="Waiting Times"
+              labels={results.patientDetails.serviceTimes.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.patientDetails.Waiting_Time}
+            />
 
-      {/* Turnaround Times Graph */}
-      <Graph
-        title="Turnaround Times"
-        labels={results.patientDetails.serviceTimes.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.patientDetails.Turnaround_Time}
-      />
+            {/* Turnaround Times Graph */}
+            <Graph
+              title="Turnaround Times"
+              labels={results.patientDetails.serviceTimes.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.patientDetails.Turnaround_Time}
+            />
 
-      {/* Response Times Graph */}
-      <Graph
-        title="Response Times"
-        labels={results.patientDetails.serviceTimes.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.patientDetails.Response_Time}
-      />
+            {/* Response Times Graph */}
+            <Graph
+              title="Response Times"
+              labels={results.patientDetails.serviceTimes.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.patientDetails.Response_Time}
+            />
 
-      {/* Server Utilization Graph */}
-      <Graph
-        title="Server Utilization"
-        labels={results.serverUtilization.map(
-          (_, i) => `Server ${i + 1}`
+            {/* Server Utilization Graph */}
+            <Graph
+              title="Server Utilization"
+              labels={results.serverUtilization.map(
+                (_, i) => `Server ${i + 1}`
+              )}
+              data={results.serverUtilization}
+              type="bar"
+            />
+          </div>
         )}
-        data={results.serverUtilization}
-        type="bar"
-      />
-    </div>
-  )}
-</div>
+      </div>
     </div>
   );
 }

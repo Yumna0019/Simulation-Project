@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import Graph from "./Graph";
 
 function MultiServerSimulation() {
-  const [lambda, setLambda] = useState(2.96);
-  const [a, seta] = useState(2.58);
-  const [b, setb] = useState(2.58);
+  const [lambda, setLambda] = useState();
+  const [a, seta] = useState();
+  const [b, setb] = useState();
   const [num, setNum] = useState(5);
-  const [server, setServer] = useState(2);
+  const [server, setServer] = useState(1);
   const [results, setResults] = useState(null);
 
   const ExpCumulative = (lamb, k) => {
@@ -14,15 +14,30 @@ function MultiServerSimulation() {
     for (let x = 0; x <= k; x++) {
       const m = 1 / lamb;
       const prob = 1 - Math.exp(-m * x);
+      // const prob = (Math.exp(-lamb) * Math.pow(lamb, x)) / factorial(x);
       cumulativeProb += prob;
     }
     return cumulativeProb;
   };
 
-  const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1));
+  // const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1));
 
   const runSimulation = () => {
-    const serviceTimes = Array.from({ length: num }, () => {
+    
+    const ranges = [];
+    let previousCp = 0;
+    const cpArray = [];
+    for (let i = 0; i < num ; i++) {
+      const cp = ExpCumulative(lambda, i);
+      if(cp > 1){
+        break;
+      }
+      ranges.push({ lower: previousCp, upper: cp, minVal: i });
+      cpArray.push(cp);
+      previousCp = cp;
+    }
+
+    const serviceTimes = Array.from({ length: cpArray.length }, () => {
       let service;
       do {
         const randomNumber = Math.random();
@@ -30,18 +45,7 @@ function MultiServerSimulation() {
       } while (service < 1);
       return service;
     });
-
-    const ranges = [];
-    let previousCp = 0;
-    const cpArray = [];
-    for (let i = 0; i < num; i++) {
-      const cp = ExpCumulative(lambda, i);
-      ranges.push({ lower: previousCp, upper: cp, minVal: i });
-      cpArray.push(cp);
-      previousCp = cp;
-    }
-
-    const interArrival = [0];
+    const interArrival = [];
     for (let i = 1; i < num; i++) {
       let ia;
       do {
@@ -54,7 +58,7 @@ function MultiServerSimulation() {
     const arrivalTimes = [0];
     const iaFinalArray = [0];
 
-    interArrival.forEach((ia) => {
+    interArrival.slice(0, cpArray.length ).forEach((ia) => {
       let iaFinal = -1;
   
       ranges.forEach((range) => {
@@ -70,7 +74,7 @@ function MultiServerSimulation() {
 
     const patientDetails = [];
     let previousCpForIA = 0;
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < cpArray.length; i++) {
       const cpVal = ExpCumulative(lambda, i);
       const minVal = i;
       const iaRange = `${previousCpForIA.toFixed(6)} - ${cpVal.toFixed(6)}`;
@@ -89,17 +93,17 @@ function MultiServerSimulation() {
       previousCpForIA = cpVal;
     }
 
-    const Start_Time = Array(num).fill(0);
-    const Finish_Time = Array(num).fill(0);
-    const Turnaround_Time = Array(num).fill(0);
-    const Waiting_Time = Array(num).fill(0);
-    const Response_Time = Array(num).fill(0);
+    const Start_Time = Array(cpArray.length).fill(0);
+    const Finish_Time = Array(cpArray.length).fill(0);
+    const Turnaround_Time = Array(cpArray.length).fill(0);
+    const Waiting_Time = Array(cpArray.length).fill(0);
+    const Response_Time = Array(cpArray.length).fill(0);
 
     const serverAvailability = Array(server).fill(0);
     const serverTasks = Array(server).fill(0).map(() => []);
     const serverBusyTime = Array(server).fill(0);
 
-    const processOrder = [...Array(num).keys()].sort(
+    const processOrder = [...Array(cpArray.length).keys()].sort(
       (a, b) => arrivalTimes[a] - arrivalTimes[b]
     );
 
@@ -142,10 +146,10 @@ function MultiServerSimulation() {
     );
 
     const metrics = {
-      avgWT: Waiting_Time.reduce((a, b) => a + b) / num,
-      avgRT: Response_Time.reduce((a, b) => a + b) / num,
-      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / num,
-      avgST: serviceTimes.reduce((a, b) => a + b) / num,
+      avgWT: Waiting_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgRT: Response_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgST: serviceTimes.reduce((a, b) => a + b) / cpArray.length,
       overallUtilization: serverUtilization.reduce((a, b) => a + b, 0),
     };
 

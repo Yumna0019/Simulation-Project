@@ -14,15 +14,15 @@ function MultiServerSimulation() {
     const tau =
       t * Math.exp(
         -z * z - 1.26551223 +
-          1.00002368 * t +
-          0.37409196 * t * t +
-          0.09678418 * t * t * t -
-          0.18628806 * t * t * t * t +
-          0.27886807 * t * t * t * t * t -
-          1.13520398 * t * t * t * t * t * t +
-          1.48851587 * t * t * t * t * t * t * t -
-          0.82215223 * t * t * t * t * t * t * t * t +
-          0.17087277 * t * t * t * t * t * t * t * t * t
+        1.00002368 * t +
+        0.37409196 * t * t +
+        0.09678418 * t * t * t -
+        0.18628806 * t * t * t * t +
+        0.27886807 * t * t * t * t * t -
+        1.13520398 * t * t * t * t * t * t +
+        1.48851587 * t * t * t * t * t * t * t -
+        0.82215223 * t * t * t * t * t * t * t * t +
+        0.17087277 * t * t * t * t * t * t * t * t * t
       );
     return z >= 0 ? 1 - tau : tau - 1;
   };
@@ -38,28 +38,31 @@ function MultiServerSimulation() {
   };
 
   const runSimulation = () => {
-    const serviceTimes = Array.from({ length: num }, () => {
-      let service;
-      do {
-        const r1 = Math.random();
-        const r2 = Math.random();
-        service = Math.round(mu + sd * (Math.cos(2 * Math.PI * r1) * Math.sqrt(-2 * Math.log(r2)))); 
-      } while (service < 1);
-      return service;
-    });
-
     const ranges = [];
     let previousCp = 0;
     const cpArray = [];
     for (let i = 0; i < num; i++) {
       const cp = normal_cumulative(i);
+      if (cp > 1) {
+        break;
+      }
       ranges.push({ lower: previousCp, upper: cp, minVal: i });
       cpArray.push(cp);
       previousCp = cp;
     }
+    console.log(cpArray)
+    const serviceTimes = Array.from({ length: cpArray.length }, () => {
+      let service;
+      do {
+        const r1 = Math.random();
+        const r2 = Math.random();
+        service = Math.round(mu + sd * (Math.cos(2 * Math.PI * r1) * Math.sqrt(-2 * Math.log(r2))));
+      } while (service < 1);
+      return service;
+    });
 
     const interArrival = [0];
-    for (let i = 1; i < num; i++) {
+    for (let i = 1; i < cpArray.length; i++) {
       let ia;
       do {
         ia = Math.random();
@@ -71,7 +74,7 @@ function MultiServerSimulation() {
     const arrivalTimes = [];
     const iaFinalArray = [];
 
-    interArrival.forEach((ia, i) => {
+    interArrival.slice(0, cpArray.length ).forEach((ia, i) => {
       let iaFinal = -1;
       ranges.forEach((range) => {
         if (range.lower <= ia && ia <= range.upper) {
@@ -83,10 +86,12 @@ function MultiServerSimulation() {
       arrivalTimes.push(arrival);
       iaFinalArray.push(iaFinal);
     });
+    console.log(iaFinalArray)
+    arrivalTimes.slice(0, cpArray.length - 1);
 
     const patientDetails = [];
     let previousCpForIA = 0;
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < cpArray.length; i++) {
       const cpVal = normal_cumulative(i);
       const minVal = i;
       const iaRange = `${previousCpForIA.toFixed(6)} - ${cpVal.toFixed(6)}`;
@@ -105,17 +110,17 @@ function MultiServerSimulation() {
       previousCpForIA = cpVal;
     }
 
-    const Start_Time = Array(num).fill(0);
-    const Finish_Time = Array(num).fill(0);
-    const Turnaround_Time = Array(num).fill(0);
-    const Waiting_Time = Array(num).fill(0);
-    const Response_Time = Array(num).fill(0);
+    const Start_Time = Array(cpArray.length).fill(0);
+    const Finish_Time = Array(cpArray.length).fill(0);
+    const Turnaround_Time = Array(cpArray.length).fill(0);
+    const Waiting_Time = Array(cpArray.length).fill(0);
+    const Response_Time = Array(cpArray.length).fill(0);
 
     const serverAvailability = Array(server).fill(0);
     const serverTasks = Array(server).fill().map(() => []);
     const serverBusyTime = Array(server).fill(0);
 
-    const processOrder = [...Array(num).keys()].sort(
+    const processOrder = [...Array(cpArray.length).keys()].sort(
       (a, b) => arrivalTimes[a] - arrivalTimes[b]
     );
 
@@ -158,10 +163,10 @@ function MultiServerSimulation() {
     );
 
     const metrics = {
-      avgWT: Waiting_Time.reduce((a, b) => a + b) / num,
-      avgRT: Response_Time.reduce((a, b) => a + b) / num,
-      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / num,
-      avgST: serviceTimes.reduce((a, b) => a + b) / num,
+      avgWT: Waiting_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgRT: Response_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgST: serviceTimes.reduce((a, b) => a + b) / cpArray.length,
       overallUtilization: serverUtilization.reduce((a, b) => a + b, 0),
     };
 
@@ -321,71 +326,71 @@ function MultiServerSimulation() {
               </tr>
             </tbody>
           </table>
-        
+
         </div>
       )}
       <div>
-  {results && (
-    <div>
-      <h2>Graphs</h2>
+        {results && (
+          <div>
+            <h2>Graphs</h2>
 
-      {/* Interarrival Times Graph */}
-      <Graph
-        title="Interarrival Times"
-        labels={results.patientDetails.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.patientDetails.map((detail) => detail.iaFinal)}
-      />
+            {/* Interarrival Times Graph */}
+            <Graph
+              title="Interarrival Times"
+              labels={results.patientDetails.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.patientDetails.map((detail) => detail.iaFinal)}
+            />
 
-      {/* Arrival Times Graph */}
-      <Graph
-        title="Arrival Times"
-        labels={results.patientDetails.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.patientDetails.map((detail) => detail.arrival)}
-      />
+            {/* Arrival Times Graph */}
+            <Graph
+              title="Arrival Times"
+              labels={results.patientDetails.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.patientDetails.map((detail) => detail.arrival)}
+            />
 
-      {/* Waiting Times Graph */}
-      <Graph
-        title="Waiting Times"
-        labels={results.patientDetails.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.Waiting_Time}
-      />
+            {/* Waiting Times Graph */}
+            <Graph
+              title="Waiting Times"
+              labels={results.patientDetails.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.Waiting_Time}
+            />
 
-      {/* Turnaround Times Graph */}
-      <Graph
-        title="Turnaround Times"
-        labels={results.patientDetails.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.Turnaround_Time}
-      />
+            {/* Turnaround Times Graph */}
+            <Graph
+              title="Turnaround Times"
+              labels={results.patientDetails.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.Turnaround_Time}
+            />
 
-      {/* Response Times Graph */}
-      <Graph
-        title="Response Times"
-        labels={results.patientDetails.map(
-          (_, i) => `Patient ${i + 1}`
-        )}
-        data={results.Response_Time}
-      />
+            {/* Response Times Graph */}
+            <Graph
+              title="Response Times"
+              labels={results.patientDetails.map(
+                (_, i) => `Patient ${i + 1}`
+              )}
+              data={results.Response_Time}
+            />
 
-      {/* Server Utilization Graph */}
-      <Graph
-        title="Server Utilization"
-        labels={results.serverUtilization.map(
-          (_, i) => `Server ${i + 1}`
+            {/* Server Utilization Graph */}
+            <Graph
+              title="Server Utilization"
+              labels={results.serverUtilization.map(
+                (_, i) => `Server ${i + 1}`
+              )}
+              data={results.serverUtilization}
+              type="bar" // This can be set to 'line' if you prefer line chart for server utilization
+            />
+          </div>
         )}
-        data={results.serverUtilization}
-        type="bar" // This can be set to 'line' if you prefer line chart for server utilization
-      />
-    </div>
-  )}
-</div>
+      </div>
 
     </div>
   );

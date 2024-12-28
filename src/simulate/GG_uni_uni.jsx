@@ -2,45 +2,53 @@ import React, { useState } from "react";
 import Graph from "./Graph";
 
 function MultiServerSimulation() {
-  const [a, seta] = useState(2.58);
-  const [b, setb] = useState(2.58);
+  const [a, seta] = useState();
+  const [b, setb] = useState();
   const [num, setNum] = useState(5);
   const [server, setServer] = useState(2);
   const [results, setResults] = useState(null);
 
   const UniCumulative = (a, b, k) => {
     let cumulativeProb = 0;
-    for (let x = 0; x <= k; x++) {
-      const prob = (x - a) / (b - a);
-      cumulativeProb += prob;
+    let prob = (k - a) / (b - a);
+    if (k < a) {
+      prob = 0;
     }
+    else if (k > b) {
+      prob = 1;
+    }
+    cumulativeProb += prob;
+    console.log(cumulativeProb)
     return cumulativeProb;
   };
 
   const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1));
 
   const runSimulation = () => {
-    const serviceTimes = Array.from({ length: num }, () => {
-      let service;
-      do {
-        const randomNumber = Math.random();
-        service = Math.round(a + (b - a) * randomNumber); // Uniform distribution
-      } while (service < 1);
-      return service;
-    });
 
     const ranges = [];
     let previousCp = 0;
     const cpArray = [];
     for (let i = 0; i < num; i++) {
       const cp = UniCumulative(a, b, i);
+      if (cp > 1) {
+        break;
+      }
       ranges.push({ lower: previousCp, upper: cp, minVal: i });
       cpArray.push(cp);
       previousCp = cp;
     }
+    const serviceTimes = Array.from({ length: cpArray.length }, () => {
+      let service;
+      do {
+        const randomNumber = Math.random();
+        service = Math.round(a + (b - a) * randomNumber);
+      } while (service < 1);
+      return service;
+    });
 
-    const interArrival = [0];
-    for (let i = 1; i < num; i++) {
+    const interArrival = [];
+    for (let i = 1; i < cpArray.length; i++) {
       let ia;
       do {
         ia = Math.random();
@@ -52,7 +60,7 @@ function MultiServerSimulation() {
     const arrivalTimes = [0];
     const iaFinalArray = [0];
 
-    interArrival.forEach((ia) => {
+    interArrival.slice(0, cpArray.length).forEach((ia) => {
       let iaFinal = -1;
 
       ranges.forEach((range) => {
@@ -63,16 +71,16 @@ function MultiServerSimulation() {
 
       arrival += iaFinal;
       arrivalTimes.push(arrival);
-      iaFinalArray.push(iaFinal); // Ensure iaFinal is properly set here
+      iaFinalArray.push(iaFinal);
     });
 
     const patientDetails = [];
     let previousCpForIA = 0;
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < cpArray.length; i++) {
       const cpVal = UniCumulative(a, b, i);
       const minVal = i;
       const iaRange = `${previousCpForIA.toFixed(6)} - ${cpVal.toFixed(6)}`;
-      const iaFinal = iaFinalArray[i]; // Correctly using iaFinal from iaFinalArray
+      const iaFinal = iaFinalArray[i];
 
       patientDetails.push({
         patientNo: i + 1,
@@ -81,17 +89,17 @@ function MultiServerSimulation() {
         cp: cpVal.toFixed(6),
         min: minVal,
         iaRange,
-        iaFinal: iaFinal, // Ensure iaFinal is valid here
+        iaFinal: iaFinal,
         arrival: arrivalTimes[i],
       });
       previousCpForIA = cpVal;
     }
 
-    const Start_Time = Array(num).fill(0);
-    const Finish_Time = Array(num).fill(0);
-    const Turnaround_Time = Array(num).fill(0);
-    const Waiting_Time = Array(num).fill(0);
-    const Response_Time = Array(num).fill(0);
+    const Start_Time = Array(cpArray.length).fill(0);
+    const Finish_Time = Array(cpArray.length).fill(0);
+    const Turnaround_Time = Array(cpArray.length).fill(0);
+    const Waiting_Time = Array(cpArray.length).fill(0);
+    const Response_Time = Array(cpArray.length).fill(0);
 
     const serverAvailability = Array(server).fill(0);
     const serverTasks = Array(server)
@@ -99,7 +107,7 @@ function MultiServerSimulation() {
       .map(() => []);
     const serverBusyTime = Array(server).fill(0);
 
-    const processOrder = [...Array(num).keys()].sort(
+    const processOrder = [...Array(cpArray.length).keys()].sort(
       (a, b) => arrivalTimes[a] - arrivalTimes[b]
     );
 
@@ -142,10 +150,10 @@ function MultiServerSimulation() {
     );
 
     const metrics = {
-      avgWT: Waiting_Time.reduce((a, b) => a + b) / num,
-      avgRT: Response_Time.reduce((a, b) => a + b) / num,
-      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / num,
-      avgST: serviceTimes.reduce((a, b) => a + b) / num,
+      avgWT: Waiting_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgRT: Response_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgTAT: Turnaround_Time.reduce((a, b) => a + b) / cpArray.length,
+      avgST: serviceTimes.reduce((a, b) => a + b) / cpArray.length,
       overallUtilization: serverUtilization.reduce((a, b) => a + b, 0),
     };
 
