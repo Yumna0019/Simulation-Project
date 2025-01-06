@@ -206,7 +206,7 @@ const GG1 = () => {
             <option value="gamma">Gamma</option>
             <option value="uniform">Uniform</option>
             <option value="normal">Normal</option>
-            <option value="poisson">Poisson</option>
+            {/* <option value="poisson">Poisson</option> */}
             <option value="exponential">Exponential</option>
           </select>
         </label>

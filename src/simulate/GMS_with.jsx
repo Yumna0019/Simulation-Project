@@ -46,7 +46,7 @@ function GMSimulate() {
           onChange={(e) => setServiceDistribution(e.target.value)}
         >
           <option value="Exponential">Exponential</option>
-          <option value="Poisson">Poisson</option>
+          {/* <option value="Poisson">Poisson</option> */}
         </select>
       </div>
 

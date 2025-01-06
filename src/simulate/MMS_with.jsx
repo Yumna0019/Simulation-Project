@@ -46,7 +46,7 @@ function MMSimulate() {
           value={serviceDistribution} 
           onChange={(e) => setServiceDistribution(e.target.value)}
         >
-          <option value="Poisson">Poisson</option>
+          {/* <option value="Poisson">Poisson</option> */}
           <option value="Exponential">Exponential</option>
         </select>
       </div>

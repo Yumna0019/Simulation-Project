@@ -5,7 +5,7 @@ const MMS = () => {
     const [meanInterarrival, setMeanInterarrival] = useState('2');
     const [meanService, setMeanService] = useState('1.8');
     const [interarrivalType, setInterarrivalType] = useState('Exponential'); // Dropdown for interarrival type
-    const [serviceType, setServiceType] = useState('Poisson'); // Dropdown for service type
+    const [serviceType, setServiceType] = useState('Exponential'); // Dropdown for service type
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
 
@@ -107,7 +107,7 @@ const MMS = () => {
                         onChange={(e) => setServiceType(e.target.value)}
                     >
                         <option value="Exponential">Exponential</option>
-                        <option value="Poisson">Poisson</option>
+                        {/* <option value="Poisson">Poisson</option> */}
                     </select>
                     <input
                         type="number"
